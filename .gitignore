@@ -1,8 +1,10 @@
 # env
 venv
+__pycache__
 
 # vscode
 .vscode
 
 # data
 testcase
+rank.txt

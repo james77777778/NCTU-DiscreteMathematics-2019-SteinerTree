@@ -12,6 +12,13 @@ http://steinlib.zib.de/download.php
 
 ### Target Structure
 ```bash
+data/
+├── B
+├── I640
+└── ...
+```
+
+```bash
 students/
 ├── 061xxxx
 ├── 071xxxx
@@ -21,6 +28,12 @@ students/
 ```
 
 ### Usage
+#### parse steiner tree data for classical style
+specify dataset name in the parse_classical.py (`dataset_name = "I640"`)
+```bash
+python parse_classical.py
+```
+#### run evaluate
 ```bash
 source [env]
 python run_evaluate.py [student_files_dir]

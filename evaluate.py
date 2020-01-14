@@ -4,13 +4,23 @@ import time
 import glob
 import math
 import logging
+import platform
 import subprocess
 import networkx as nx
 
 
-TIMEOUT = 10
+TIMEOUT = 20
 OUTPUT = "output"
 SCORE = "score"
+# For Linux and maybe MacOS
+file_suffix = ""
+command_prefix = "./"
+exec_program_shell = False
+# For Windows
+if platform.system() == "Windows":
+    file_suffix = ".exe"
+    command_prefix = ""
+    exec_program_shell = True
 
 
 def validate_classical(output, testcase):
@@ -52,10 +62,15 @@ def validate_classical(output, testcase):
         if t not in out_G:
             res["contains_all_t"] = False
             break
-    # check if out_G is connected
-    res["is_connected"] = nx.is_connected(out_G)
-    # check if out_G is tree
-    res["is_tree"] = nx.is_tree(out_G)
+    try:
+        # check if out_G is connected
+        res["is_connected"] = nx.is_connected(out_G)
+        # check if out_G is tree
+        res["is_tree"] = nx.is_tree(out_G)
+    except nx.exception.NetworkXPointlessConcept:
+        logging.error("Null graph: {}".format(output))
+        res["no_such_file"] = True
+        return res
     # check all nodes and edges
     for n in list(out_G.nodes()):
         if not G.has_node(n):
@@ -67,7 +82,12 @@ def validate_classical(output, testcase):
             break
     res["cost"] = 0
     for e1, e2 in out_G.edges():
-        res["cost"] += G[e1][e2]["weight"]
+        try:
+            res["cost"] += G[e1][e2]["weight"]
+        except KeyError:
+            print("Error Edge: {} {}".format(e1, e2))
+            res["cost"] = -1
+            break
     return res
 
 
@@ -105,11 +125,16 @@ def validate_euclidean(output, testcase):
                     edges = line.strip('\n').split(',').copy()
                     break
                 parsed_line = line.split()
-                x = float(parsed_line[0])
-                y = float(parsed_line[1])
-                z = float(parsed_line[2])
-                nodes.append([x, y, z])
-                G.add_node(i)
+                try:
+                    x = float(parsed_line[0])
+                    y = float(parsed_line[1])
+                    z = float(parsed_line[2])
+                    nodes.append([x, y, z])
+                    G.add_node(i)
+                except IndexError:
+                    logging.error("Fail to parse: {}".format(output))
+                    res["no_such_file"] = True
+                    return res
             if edges[0] == '':
                 del edges[0]
             if edges[-1] == '':
@@ -122,7 +147,7 @@ def validate_euclidean(output, testcase):
                     (nodes[n1-1][1]-nodes[n2-1][1])**2 +
                     (nodes[n1-1][2]-nodes[n2-1][2])**2)
                 G.add_edge(n1, n2, weight=distance)
-    except FileNotFoundError:
+    except (FileNotFoundError, UnboundLocalError):
         logging.error("No such file: {}".format(output))
         res["no_such_file"] = True
         return res
@@ -146,7 +171,8 @@ def validate_euclidean(output, testcase):
 
 def exec_program(args):
     p = subprocess.Popen(
-        args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        shell=exec_program_shell)
     try:
         ts = time.perf_counter()
         stdouts, stderrs = p.communicate(timeout=TIMEOUT)
@@ -226,14 +252,16 @@ def run_all():
 
     # Classic Steiner Tree
     exec_list = glob.glob("*")
-    is_classic_c = "classical" in exec_list
+    is_classic_c = "classical{}".format(file_suffix) in exec_list
     is_classic_py = "classical.py" in exec_list
 
     if is_classic_c:
         for testcase in classical_testlist:
             testcase_name = os.path.basename(testcase)
             logging.info("{} STARTS".format(testcase_name))
-            args = ["./classical", testcase, testcase+".terminals"]
+            args = ["{}classical".format(command_prefix),
+                    testcase,
+                    testcase+".terminals"]
             te = exec_program(args)
             out = os.path.join(OUTPUT, testcase_name+".outputs")
             res = validate_classical(out, testcase)
@@ -252,14 +280,15 @@ def run_all():
             score(score_file, res, testcase_name)
 
     # Euclidean Steiner Tree
-    is_euclidean_c = "euclidean" in exec_list
+    is_euclidean_c = "euclidean{}".format(file_suffix) in exec_list
     is_euclidean_py = "euclidean.py" in exec_list
 
     if is_euclidean_c:
         for testcase in euclidean_testlist:
             testcase_name = os.path.basename(testcase)
             logging.info("{} STARTS".format(testcase_name))
-            args = ["./euclidean", testcase]
+            args = ["{}euclidean".format(command_prefix),
+                    testcase]
             te = exec_program(args)
             out = os.path.join(OUTPUT, testcase_name+".outputs")
             res = validate_euclidean(out, testcase)
@@ -278,6 +307,7 @@ def run_all():
             score(score_file, res, testcase_name)
 
     score_file.close()
+    # logging.shutdown()
 
 
 if __name__ == "__main__":

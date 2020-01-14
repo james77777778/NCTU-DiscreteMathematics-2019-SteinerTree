@@ -9,6 +9,7 @@ import shutil
 # target_folder is the folder that contains students' files
 target_folder = sys.argv[1]
 students_list = glob.glob(os.path.join(target_folder, "*"))
+students_list = sorted(students_list)
 now_cwd = os.getcwd()
 
 # copy files and execute

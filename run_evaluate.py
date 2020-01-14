@@ -125,11 +125,11 @@ for testcase in score:
     score[testcase] = sorted(item, key=sort_func, reverse=True)
     n = len(score[testcase])
     for i, (student_id, p) in enumerate(score[testcase]):
-        if i < n*0.25:
+        if i+1 < n*0.25:
             rank_score[testcase].append((student_id, 15))
-        elif i < n*0.5:
+        elif i+1 < n*0.5:
             rank_score[testcase].append((student_id, 10))
-        elif i < n*0.75:
+        elif i+1 < n*0.75:
             rank_score[testcase].append((student_id, 5))
         else:
             rank_score[testcase].append((student_id, 0))

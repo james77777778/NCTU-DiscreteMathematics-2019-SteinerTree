@@ -44,12 +44,12 @@ for student_path in students_list:
             cost = float(parsed_line[2])
             if time > 0 and cost > 0:
                 pass_score[student_id] += 35
-            # record
-            if testcase not in time_leaderboard:
-                time_leaderboard[testcase] = []
-                cost_leaderboard[testcase] = []
-            time_leaderboard[testcase].append((student_id, time))
-            cost_leaderboard[testcase].append((student_id, cost))
+                # record
+                if testcase not in time_leaderboard:
+                    time_leaderboard[testcase] = []
+                    cost_leaderboard[testcase] = []
+                time_leaderboard[testcase].append((student_id, time))
+                cost_leaderboard[testcase].append((student_id, cost))
 
 
 # sort function

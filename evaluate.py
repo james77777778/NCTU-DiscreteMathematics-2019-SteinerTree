@@ -234,7 +234,7 @@ def run_all():
                         handlers=[
                             logging.FileHandler("evaluation.log", mode='w'),
                             logging.StreamHandler(sys.stdout)])
-
+    logging.info(os.getcwd())
     # Find necessary files
     exec_list = glob.glob("*")
     classical_testlist = glob.glob(
